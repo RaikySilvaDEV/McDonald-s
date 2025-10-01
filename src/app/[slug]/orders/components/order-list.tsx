@@ -100,18 +100,7 @@ const OrderList = ({ orders }: OrderListProps) => {
             </div>
             <Separator />
             <p className="text-sm font-medium">{formatCurrency(order.total)}</p>
-            <div className="flex gap-2 pt-2">
-              {order.status === OrderStatus.PENDING && (
-                <Button onClick={() => updateStatus(order.id, OrderStatus.IN_PREPARATION)}>
-                  Iniciar preparo
-                </Button>
-              )}
-              {order.status === OrderStatus.IN_PREPARATION && (
-                <Button onClick={() => updateStatus(order.id, OrderStatus.FINISHED)}>
-                  Finalizar
-                </Button>
-              )}
-            </div>
+            {/* Admin controls removed from customer-facing view */}
           </CardContent>
         </Card>
       ))}

@@ -19,6 +19,12 @@ export async function PATCH(request: Request, context: any) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
+    // simple admin auth: require ADMIN_KEY in header
+    const adminKey = request.headers.get("x-admin-key");
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const updated = await db.order.update({
       where: { id: Number(id) },
       data: { status: status as OrderStatus },

@@ -1,5 +1,6 @@
 import AdminOrderList from "./components/admin-order-list";
 
+
 interface AdminPageProps {
   params: {
     slug: string;

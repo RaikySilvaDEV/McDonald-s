@@ -6,8 +6,8 @@ import RestaurantCategories from "./components/categories";
 import RestaurantHeader from "./components/header";
 
 interface RestaurantMenuPageProps {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ consumptionMethod: string }>;
+  params: { slug: string };
+  searchParams: { consumptionMethod: string };
 }
 
 const isConsumptionMethodValid = (consumptionMethod: string) => {
@@ -18,8 +18,8 @@ const RestaurantMenuPage = async ({
   params,
   searchParams,
 }: RestaurantMenuPageProps) => {
-  const { slug } = await params;
-  const { consumptionMethod } = await searchParams;
+  const { slug } = params;
+  const { consumptionMethod } = searchParams;
   if (!isConsumptionMethodValid(consumptionMethod)) {
     return notFound();
   }

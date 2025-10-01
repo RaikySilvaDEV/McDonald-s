@@ -5,11 +5,11 @@ import CpfForm from "./components/cpf-form";
 import OrderList from "./components/order-list";
 
 interface OrdersPageProps {
-  searchParams: Promise<{ cpf: string }>;
+  searchParams: { cpf?: string };
 }
 
 const OrdersPage = async ({ searchParams }: OrdersPageProps) => {
-  const { cpf } = await searchParams;
+  const { cpf } = searchParams;
   if (!cpf) {
     return <CpfForm />;
   }

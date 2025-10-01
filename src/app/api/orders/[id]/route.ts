@@ -3,12 +3,11 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/prisma";
 
-export async function PATCH(
-  request: Request,
-  context: { params: { id: string } }
-): Promise<Response> {
+// Allow `any` for the route context because Next's runtime expects a flexible shape here
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PATCH(request: Request, context: any) {
   try {
-    const { id } = context.params;
+    const { id } = context.params as { id: string };
     const body = await request.json();
   const { status } = body as { status?: string };
     if (!status) {

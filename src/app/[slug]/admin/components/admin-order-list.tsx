@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";

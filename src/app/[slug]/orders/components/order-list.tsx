@@ -40,6 +40,20 @@ const getStatusLabel = (status: OrderStatus) => {
 const OrderList = ({ orders }: OrderListProps) => {
   const router = useRouter();
   const handleBackClick = () => router.back();
+  const updateStatus = async (orderId: number, status: OrderStatus) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      // TODO: show toast
+    }
+  };
   return (
     <div className="space-y-6 p-6">
       <Button
@@ -86,6 +100,18 @@ const OrderList = ({ orders }: OrderListProps) => {
             </div>
             <Separator />
             <p className="text-sm font-medium">{formatCurrency(order.total)}</p>
+            <div className="flex gap-2 pt-2">
+              {order.status === OrderStatus.PENDING && (
+                <Button onClick={() => updateStatus(order.id, OrderStatus.IN_PREPARATION)}>
+                  Iniciar preparo
+                </Button>
+              )}
+              {order.status === OrderStatus.IN_PREPARATION && (
+                <Button onClick={() => updateStatus(order.id, OrderStatus.FINISHED)}>
+                  Finalizar
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}

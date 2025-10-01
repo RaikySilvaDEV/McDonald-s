@@ -13,8 +13,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Matheus Donalds",
-  description: "Matheus Otenio McDonalds!",
+  title: "RaikySilva Donalds",
+  description: "Raiky Silva McDonalds!",
 };
 
 export default function RootLayout({

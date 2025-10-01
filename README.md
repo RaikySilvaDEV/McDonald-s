@@ -216,6 +216,31 @@ Checklist para validar que tudo está OK
 
 Se algo falhar, cole a saída do terminal aqui ou abra uma issue descrevendo o passo que falhou — eu posso ajudar a depurar.
 
+## Deploy na Vercel
+
+Passo-a-passo rápido para publicar no Vercel:
+
+1. Faça login em https://vercel.com (recomendo usar a conta GitHub).
+2. Clique em "New Project" e importe o repositório `McDonald-s-main` (ou seu fork).
+3. Em "Environment Variables" adicione os valores:
+
+   - `DATABASE_URL` = connection string completa do Neon (ou outro Postgres). Ex.: `postgresql://user:pass@host:5432/dbname?sslmode=require`
+   - `NODE_ENV` = production
+   - Adicione quaisquer `NEXT_PUBLIC_...` que o app precise expor.
+
+4. Configurações de build (geralmente detectadas automaticamente):
+
+   - Framework: Next.js
+   - Build command: `npm run build`
+   - Output: Padrão do Next.js
+
+5. Clique em Deploy. O Vercel rodará a build e disponibilizará a URL.
+
+Boas práticas:
+- Configure variáveis diferentes para Preview (pull requests) e Production.
+- Nunca adicione segredos ao repositório — use o painel de Environment Variables da Vercel.
+
+
 
 
 

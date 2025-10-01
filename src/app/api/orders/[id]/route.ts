@@ -3,9 +3,12 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/prisma";
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: Request,
+  context: { params: { id: string } }
+): Promise<Response> {
   try {
-    const { id } = params;
+    const { id } = context.params;
     const body = await request.json();
   const { status } = body as { status?: string };
     if (!status) {

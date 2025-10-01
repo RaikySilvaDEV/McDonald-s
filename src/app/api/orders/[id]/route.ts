@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { OrderStatus } from "@prisma/client";
 
 import { db } from "@/lib/prisma";
 
@@ -23,7 +24,7 @@ export async function PATCH( request: Request, { params }: { params: { id: strin
 
     const updated = await db.order.update({
       where: {id: parseInt(params.id, 10), },
-      data: { status: status as any },
+      data: { status: status as OrderStatus },
     });
     return NextResponse.json(updated);
   } catch (err) {

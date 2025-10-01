@@ -3,9 +3,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ConsumptionMethod } from "@prisma/client";
 import { Loader2Icon } from "lucide-react";
-import { useParams, useSearchParams } from "next/navigation";
-import { useContext, useTransition } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useContext, useEffect, useState, useTransition } from "react";
+import Confetti from "react-confetti";
 import { PatternFormat } from "react-number-format";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -32,7 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 import { createOrder } from "../actions/create-order";
-import { CartContext } from "../contexts/cart";
+import { CartContext, removeCpfPunctuation } from "../contexts/cart";
 import { isValidCpf } from "../helpers/cpf";
 
 const formSchema = z.object({
@@ -61,6 +62,8 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
   const { slug } = useParams<{ slug: string }>();
   const { products, clearCart } = useContext(CartContext);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const [showConfetti, setShowConfetti] = useState(false);
   const [isPending, startTransition] = useTransition()
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -70,6 +73,17 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
     },
     shouldUnregister: true,
   });
+
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        const customerCpf = form.getValues("cpf");
+        const cpfQuery = removeCpfPunctuation(customerCpf || "");
+        router.push(`/${slug}/orders?cpf=${cpfQuery}`);
+      }, 3000); // Redireciona após 3 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti, router, slug, form]);
   const onSubmit = async (data: FormSchema) => {
     try {
       const consumptionMethod = searchParams.get(
@@ -83,8 +97,9 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
           products,
           slug,
         });
-        onOpenChange(false);
         clearCart();
+        setShowConfetti(true);
+        onOpenChange(false);
         toast.success("Pedido finalizado com sucesso!");
       })
      
@@ -95,6 +110,13 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
   };
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+        />
+      )}
       <DrawerTrigger asChild></DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>

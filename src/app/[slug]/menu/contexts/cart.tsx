@@ -3,6 +3,10 @@
 import { Product } from "@prisma/client";
 import { createContext, ReactNode, useState } from "react";
 
+export const removeCpfPunctuation = (cpf: string) => {
+  return cpf.replace(/\D/g, "");
+};
+
 export interface CartProduct
   extends Pick<Product, "id" | "name" | "price" | "imageUrl"> {
   quantity: number;
@@ -18,6 +22,7 @@ export interface ICartContext {
   decreaseProductQuantity: (productId: string) => void;
   increaseProductQuantity: (productId: string) => void;
   removeProduct: (productId: string) => void;
+  clearCart: () => void;
 }
 
 export const CartContext = createContext<ICartContext>({
@@ -30,6 +35,7 @@ export const CartContext = createContext<ICartContext>({
   decreaseProductQuantity: () => {},
   increaseProductQuantity: () => {},
   removeProduct: () => {},
+  clearCart: () => {},
 });
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
@@ -92,6 +98,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       prevProducts.filter((prevProduct) => prevProduct.id !== productId),
     );
   };
+  const clearCart = () => {
+    setProducts([]);
+  };
   return (
     <CartContext.Provider
       value={{
@@ -102,6 +111,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         decreaseProductQuantity,
         increaseProductQuantity,
         removeProduct,
+        clearCart,
         total,
         totalQuantity,
       }}

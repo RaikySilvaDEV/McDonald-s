@@ -1,6 +1,7 @@
 "use client";
 
-import { Prisma } from "@prisma/client";
+import { ConsumptionMethod, Prisma } from "@prisma/client";
+import { Utensils, Package } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,19 @@ export default function AdminOrderList({ slug }: Props) {
                 <p className="text-sm text-muted-foreground">
                   CPF: {order.customerCpf}
                 </p>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {order.consumptionMethod === "DINE_IN" ? (
+                    <>
+                      <Utensils size={14} />
+                      <span>Para Comer no Local</span>
+                    </>
+                  ) : (
+                    <>
+                      <Package size={14} />
+                      <span>Para Viagem</span>
+                    </>
+                  )}
+                </div>
 
                 <Separator />
 

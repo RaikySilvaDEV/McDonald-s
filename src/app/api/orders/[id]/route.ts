@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
+import { db } from "@/lib/prisma";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -21,8 +21,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       data: { status: status as OrderStatus },
     });
     return NextResponse.json(updated);
-  } catch (err: any) {
+  } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: err?.message ?? String(err) }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

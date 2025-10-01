@@ -59,7 +59,7 @@ interface FinishOrderDialogProps {
 
 const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
   const { slug } = useParams<{ slug: string }>();
-  const { products } = useContext(CartContext);
+  const { products, clearCart } = useContext(CartContext);
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition()
   const form = useForm<FormSchema>({
@@ -84,6 +84,7 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
           slug,
         });
         onOpenChange(false);
+        clearCart();
         toast.success("Pedido finalizado com sucesso!");
       })
      

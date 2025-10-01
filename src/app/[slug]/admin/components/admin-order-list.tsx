@@ -1,8 +1,7 @@
 "use client";
 
-import { Prisma } from "@prisma/client";
-import { useEffect, useState } from "react";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,26 +27,7 @@ export default function AdminOrderList({ slug }: Props) {
 
   const [loading, setLoading] = useState(false);
 
-  const getStatusLabel = (status: OrderStatus) => {
-    if (status === "FINISHED") return "Finalizado";
-    if (status === "IN_PREPARATION") return "Em preparo";
-    if (status === "PENDING") return "Pendente";
-    return "";
-  };
-
-  useEffect(() => {
-    if (!adminKey || !orders) return;
-
-    const intervalId = setInterval(() => {
-      loadOrders();
-    }, 5000); // Atualiza a cada 5 segundos
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [adminKey, orders]);
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders?slug=${slug}`, {
@@ -59,17 +39,32 @@ export default function AdminOrderList({ slug }: Props) {
       setOrders(data); // Mantém a lista completa para o polling
 
       // Distribui os pedidos por status
-      setPendingOrders(data.filter((o: any) => o.status === "PENDING"));
-      setInProgressOrders(data.filter((o: any) => o.status === "IN_PREPARATION"));
-      setFinishedOrders(data.filter((o: any) => o.status === "FINISHED"));
+      setPendingOrders(
+        data.filter((o: OrderWithProducts) => o.status === "PENDING"),
+      );
+      setInProgressOrders(
+        data.filter((o: OrderWithProducts) => o.status === "IN_PREPARATION"),
+      );
+      setFinishedOrders(data.filter((o: OrderWithProducts) => o.status === "FINISHED"));
     } catch (err) {
       console.error(err);
       alert("Failed to load orders — check admin key");
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminKey, slug]);
+  useEffect(() => {
+    if (!adminKey || !orders) return;
 
+    const intervalId = setInterval(() => {
+      loadOrders();
+    }, 5000); // Atualiza a cada 5 segundos
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [adminKey, orders, loadOrders]);
+  
   const updateStatus = async (orderId: number, status: string) => {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
@@ -142,11 +137,11 @@ export default function AdminOrderList({ slug }: Props) {
   return (
     <div>
       <div className="flex gap-2">
-        <input
+        <Input
           value={adminKey}
           onChange={(e) => setAdminKey(e.target.value)}
           placeholder="Admin key"
-          className="border px-2 py-1 rounded"
+          className="max-w-sm"
         />
         <Button onClick={loadOrders} disabled={!adminKey || loading}>
           Carregar pedidos

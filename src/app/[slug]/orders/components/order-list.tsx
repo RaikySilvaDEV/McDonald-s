@@ -1,6 +1,7 @@
 "use client";
 
 import { OrderStatus, Prisma } from "@prisma/client";
+import { useEffect } from "react";
 import { ChevronLeftIcon, ScrollTextIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -39,6 +40,16 @@ const getStatusLabel = (status: OrderStatus) => {
 
 const OrderList = ({ orders }: OrderListProps) => {
   const router = useRouter();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      router.refresh();
+    }, 5000); // Atualiza a cada 5 segundos
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [router]);
   const handleBackClick = () => router.back();
   const updateStatus = async (orderId: number, status: OrderStatus) => {
     try {

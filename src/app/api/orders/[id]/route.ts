@@ -5,16 +5,15 @@ import { db } from "@/lib/prisma";
 
 // Allow `any` for the route context because Next's runtime expects a flexible shape here
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PATCH(request: Request, context: any) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = context.params as { id: string };
     const body = await request.json();
-  const { status } = body as { status?: string };
+    const { status } = body as { status?: string };
     if (!status) {
       return NextResponse.json({ error: "Missing status" }, { status: 400 });
     }
     // validate allowed statuses
-  const allowed = ["PENDING", "IN_PREPARATION", "FINISHED"];
+    const allowed = ["PENDING", "IN_PREPARATION", "FINISHED"];
     if (!allowed.includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
@@ -26,7 +25,7 @@ export async function PATCH(request: Request, context: any) {
     }
 
     const updated = await db.order.update({
-      where: { id: Number(id) },
+      where: {id: parseInt(params.id, 10), },
       data: { status: status as OrderStatus },
     });
     return NextResponse.json(updated);

@@ -240,6 +240,21 @@ Boas práticas:
 - Configure variáveis diferentes para Preview (pull requests) e Production.
 - Nunca adicione segredos ao repositório — use o painel de Environment Variables da Vercel.
 
+Admin key (segurança)
+
+Para proteger as rotas administrativas (onde o estabelecimento atualiza o status dos pedidos), este projeto utiliza uma variável de ambiente `ADMIN_KEY`.
+
+- Localmente: defina `ADMIN_KEY` em seu `.env` (copie de `.env.example`) com uma string forte. Por exemplo (no bash):
+
+```bash
+# gerar uma chave forte com openssl
+openssl rand -base64 32 > admin.key && echo "ADMIN_KEY=$(cat admin.key)" >> .env
+```
+
+- No Vercel: adicione `ADMIN_KEY` em Settings → Environment Variables (Production e Preview) com o mesmo valor.
+
+Observação: o `AdminOrderList` pede a chave ao usuário do estabelecimento; apenas quem tiver a chave poderá listar e alterar pedidos.
+
 
 
 

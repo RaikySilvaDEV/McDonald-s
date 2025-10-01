@@ -1,16 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { Prisma } from "@prisma/client";
+import { useEffect, useState } from "react";
+import { OrderStatus } from "@prisma/client";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 interface Props {
   slug: string;
 }
 
+type OrderWithProducts = Prisma.OrderGetPayload<{
+  include: { orderProducts: { include: { product: true } } };
+}>;
+
 export default function AdminOrderList({ slug }: Props) {
   const [adminKey, setAdminKey] = useState("");
-  const [orders, setOrders] = useState<any[] | null>(null);
+  const [orders, setOrders] = useState<OrderWithProducts[] | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<OrderWithProducts[]>([]);
+  const [inProgressOrders, setInProgressOrders] = useState<OrderWithProducts[]>(
+    [],
+  );
+  const [finishedOrders, setFinishedOrders] = useState<OrderWithProducts[]>([]);
+
   const [loading, setLoading] = useState(false);
+
+  const getStatusLabel = (status: OrderStatus) => {
+    if (status === "FINISHED") return "Finalizado";
+    if (status === "IN_PREPARATION") return "Em preparo";
+    if (status === "PENDING") return "Pendente";
+    return "";
+  };
+
+  useEffect(() => {
+    if (!adminKey || !orders) return;
+
+    const intervalId = setInterval(() => {
+      loadOrders();
+    }, 5000); // Atualiza a cada 5 segundos
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [adminKey, orders]);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -21,7 +56,12 @@ export default function AdminOrderList({ slug }: Props) {
       });
       if (!res.ok) throw new Error("Unauthorized or failed");
       const data = await res.json();
-      setOrders(data);
+      setOrders(data); // Mantém a lista completa para o polling
+
+      // Distribui os pedidos por status
+      setPendingOrders(data.filter((o: any) => o.status === "PENDING"));
+      setInProgressOrders(data.filter((o: any) => o.status === "IN_PREPARATION"));
+      setFinishedOrders(data.filter((o: any) => o.status === "FINISHED"));
     } catch (err) {
       console.error(err);
       alert("Failed to load orders — check admin key");
@@ -45,6 +85,60 @@ export default function AdminOrderList({ slug }: Props) {
     }
   };
 
+  const OrderColumn = ({
+    title,
+    orders,
+  }: {
+    title: string;
+    orders: OrderWithProducts[];
+  }) => (
+    <div className="w-full">
+      <h3 className="py-2 text-center font-semibold">{title}</h3>
+      <div className="flex h-[600px] flex-col gap-4 overflow-y-auto rounded-lg bg-accent p-4">
+        {orders.length > 0 ? (
+          orders.map((order) => (
+            <Card key={order.id}>
+              <CardContent className="space-y-3 p-5">
+                <p className="font-semibold">Pedido #{order.id}</p>
+                <p className="text-sm text-muted-foreground">
+                  CPF: {order.customerCpf}
+                </p>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  {order.orderProducts.map((op) => (
+                    <div key={op.id} className="text-sm text-muted-foreground">
+                      {op.quantity}x {op.product.name}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex w-full justify-end gap-2 pt-2">
+                  {order.status === "PENDING" && (
+                    <Button
+                      size="sm"
+                      onClick={() => updateStatus(order.id, "IN_PREPARATION")}
+                    >
+                      Iniciar preparo
+                    </Button>
+                  )}
+                  {order.status === "IN_PREPARATION" && (
+                    <Button size="sm" onClick={() => updateStatus(order.id, "FINISHED")}>
+                      Finalizar
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">Nenhum pedido.</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <div className="flex gap-2">
@@ -59,38 +153,16 @@ export default function AdminOrderList({ slug }: Props) {
         </Button>
       </div>
 
-      {orders && (
-        <div className="space-y-4 pt-4">
-          {orders.map((order) => (
-            <div key={order.id} className="p-4 border rounded">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-semibold">Pedido #{order.id}</p>
-                  <p>CPF: {order.customerCpf}</p>
-                </div>
-                <div className="flex gap-2">
-                  {order.status === "PENDING" && (
-                    <Button onClick={() => updateStatus(order.id, "IN_PREPARATION")}>
-                      Iniciar preparo
-                    </Button>
-                  )}
-                  {order.status === "IN_PREPARATION" && (
-                    <Button onClick={() => updateStatus(order.id, "FINISHED")}>
-                      Finalizar
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="pt-2">
-                {order.orderProducts.map((op: any) => (
-                  <div key={op.id} className="text-sm">
-                    {op.quantity}x {op.product.name}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+      {orders && orders.length > 0 && (
+        <div className="flex gap-4 pt-6">
+          <OrderColumn title="Pendentes" orders={pendingOrders} />
+          <OrderColumn title="Em Preparo" orders={inProgressOrders} />
+          <OrderColumn title="Finalizados" orders={finishedOrders} />
         </div>
+      )}
+
+      {orders && orders.length === 0 && (
+        <p className="pt-6 text-muted-foreground">Nenhum pedido encontrado.</p>
       )}
     </div>
   );

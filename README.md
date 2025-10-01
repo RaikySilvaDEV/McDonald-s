@@ -12,6 +12,27 @@ Este projeto é um sistema de autoatendimento para restaurantes, inspirado nos t
 - **PostgreSQL** - Banco de dados relacional para armazenamento seguro
 - **Tailwind CSS** - Estilização moderna e responsiva
 
+Detalhes e versões principais
+
+- Next.js 15.1.6 — framework React para SSR/SSG e rotas App Router.
+- React 19 — biblioteca UI usada pelo Next.
+- TypeScript 5 — tipagem estática para todo o projeto.
+- Prisma 6.2.1 — ORM e client gerado automaticamente (veja `prisma/schema.prisma`).
+- @prisma/client 6.2.1 — cliente runtime usado pela aplicação.
+- Tailwind CSS 3.4.1 — utilitários CSS para estilos responsivos.
+- Neon — provedor PostgreSQL em nuvem (uso recomendado para dev/test).
+
+Outras bibliotecas importantes
+
+- `react-hook-form` — formulários e validação.
+- `zod` — validação de schemas.
+- `lucide-react` — ícones.
+- `sonner` — notificações.
+
+Notas:
+- As versões acima estão especificadas em `package.json` e podem ser atualizadas conforme necessário.
+- Antes de qualquer alteração no schema do Prisma, rode `npx prisma generate` e crie/execute migrações (`npx prisma migrate dev` ou `deploy`) conforme o fluxo desejado.
+
 ## Visão Geral do Sistema
 
 ### Página Inicial

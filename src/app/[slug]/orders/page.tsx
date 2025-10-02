@@ -5,11 +5,16 @@ import CpfForm from "./components/cpf-form";
 import OrderList from "./components/order-list";
 
 interface OrdersPageProps {
-  searchParams: { cpf?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ cpf?: string }>;
 }
 
-const OrdersPage = async ({ searchParams }: OrdersPageProps) => {
-  const { cpf } = searchParams;
+export default async function OrdersPage({
+  params,
+  searchParams,
+}: OrdersPageProps) {
+  const { slug } = await params; // Although unused, it's good practice to have it.
+  const { cpf } = await searchParams;
   if (!cpf) {
     return <CpfForm />;
   }
@@ -21,7 +26,7 @@ const OrdersPage = async ({ searchParams }: OrdersPageProps) => {
       createdAt: "desc",
     },
     where: {
-        customerCpf: removeCpfPunctuation(cpf),
+      customerCpf: removeCpfPunctuation(cpf),
     },
     include: {
       restaurant: {
@@ -38,6 +43,4 @@ const OrdersPage = async ({ searchParams }: OrdersPageProps) => {
     },
   });
   return <OrderList orders={orders} />;
-};
-
-export default OrdersPage;
+}

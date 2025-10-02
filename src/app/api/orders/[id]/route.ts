@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
 import { OrderStatus } from "@prisma/client";
+import { NextResponse } from "next/server";
 
 import { db } from "@/lib/prisma";
 
-export async function PATCH( request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const body = await request.json();
     const { status } = body as { status?: string };
@@ -22,8 +25,9 @@ export async function PATCH( request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const updated = await db.order.update({
-      where: {id: parseInt(params.id, 10), },
+      where: { id: parseInt(id, 10) },
       data: { status: status as OrderStatus },
     });
     return NextResponse.json(updated);

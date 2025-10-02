@@ -6,11 +6,11 @@ import ProductDetails from "./components/product-details";
 import ProductHeader from "./components/product-header";
 
 interface ProductPageProps {
-  params: { slug: string; productId: string };
+  params: Promise<{ slug: string; productId: string }>;
 }
 
-const ProductPage = async ({ params }: ProductPageProps) => {
-  const { slug, productId } = params;
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { slug, productId } = await params;
   const product = await db.product.findUnique({
     where: { id: productId },
     include: {
@@ -35,6 +35,4 @@ const ProductPage = async ({ params }: ProductPageProps) => {
       <ProductDetails product={product} />
     </div>
   );
-};
-
-export default ProductPage;
+}

@@ -4,8 +4,8 @@ import { PrismaClient } from "@prisma/client";
 const prismaClient = new PrismaClient();
 
 const restaurantData = {
-  name: "Clone Donalds",
-  slug: "fsw-donalds",
+  name: "McDonalds",
+  slug: "mcdonalds",
   description: "O melhor fast food do mundo",
   avatarImageUrl:
     "https://u9a6wmr3as.ufs.sh/f/jppBrbk0cChQvcNP9rHlEJu1vCY5kLqzjf29HKaeN78Z6pRy",

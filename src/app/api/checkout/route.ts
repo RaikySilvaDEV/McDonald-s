@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   }
 
   const stripe = new Stripe(stripeSecretKey, {
-    apiVersion: "2024-04-10",
+    apiVersion: "2025-09-30.clover",
   });
 
   // Busca o restaurante para obter o slug

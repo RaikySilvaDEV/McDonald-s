@@ -5,6 +5,8 @@ import { db } from "@/lib/prisma";
 import RestaurantCategories from "./components/categories";
 import RestaurantHeader from "./components/header";
 
+export const dynamic = "force-dynamic";
+
 interface RestaurantMenuPageProps {
   params: Promise<{ slug: string }>;
 }

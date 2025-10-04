@@ -13,8 +13,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "McDonald's",
-  description: "McDonald's!",
+  title: "McDonalds",
+  description: "McDonalds!",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico"

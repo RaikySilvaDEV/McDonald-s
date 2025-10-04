@@ -7,24 +7,24 @@ import RestaurantHeader from "./components/header";
 
 interface RestaurantMenuPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ consumptionMethod: string }>;
 }
 
 const isConsumptionMethodValid = (consumptionMethod: string) => {
-  return ["DINE_IN", "TAKEAWAY"].includes(consumptionMethod.toUpperCase());
+  return ["DINE_IN", "TAKEAWAY"].includes(consumptionMethod?.toUpperCase());
 };
 
-export default async function RestaurantMenuPage({  params,  searchParams,}: RestaurantMenuPageProps) {
+export default async function RestaurantMenuPage({
+  params,
+}: RestaurantMenuPageProps) {
   const { slug } = await params;
-  const { consumptionMethod } = await searchParams;
-  if (!isConsumptionMethodValid(consumptionMethod)) {
-    return notFound();
-  }
+
   const restaurant = await db.restaurant.findUnique({
     where: { slug },
     include: {
       menuCategories: {
-        include: { products: true },
+        include: {
+          products: true,
+        },
       },
     },
   });
@@ -32,7 +32,7 @@ export default async function RestaurantMenuPage({  params,  searchParams,}: Res
     return notFound();
   }
   return (
-    <div>
+    <div className="relative">
       <RestaurantHeader restaurant={restaurant} />
       <RestaurantCategories restaurant={restaurant} />
     </div>

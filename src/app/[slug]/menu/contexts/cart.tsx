@@ -1,14 +1,14 @@
 "use client";
 
-import { Product } from "@prisma/client";
-import { createContext, ReactNode, useState } from "react";
+import { Prisma, Product } from "@prisma/client";
+import { createContext, ReactNode, useCallback, useState } from "react";
 
 export const removeCpfPunctuation = (cpf: string) => {
   return cpf.replace(/\D/g, "");
 };
 
 export interface CartProduct
-  extends Pick<Product, "id" | "name" | "price" | "imageUrl"> {
+  extends Pick<Product, "id" | "name" | "price" | "imageUrl" | "restaurantId"> {
   quantity: number;
 }
 
@@ -17,6 +17,8 @@ export interface ICartContext {
   products: CartProduct[];
   total: number;
   totalQuantity: number;
+  restaurant?: Prisma.RestaurantGetPayload<{}>;
+  consumptionMethod: string;
   toggleCart: () => void;
   addProduct: (product: CartProduct) => void;
   decreaseProductQuantity: (productId: string) => void;
@@ -30,6 +32,8 @@ export const CartContext = createContext<ICartContext>({
   total: 0,
   totalQuantity: 0,
   products: [],
+  restaurant: undefined,
+  consumptionMethod: "TAKEAWAY",
   toggleCart: () => {},
   addProduct: () => {},
   decreaseProductQuantity: () => {},
@@ -38,39 +42,56 @@ export const CartContext = createContext<ICartContext>({
   clearCart: () => {},
 });
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
+interface CartProviderProps {
+  children: ReactNode;
+  restaurant: Prisma.RestaurantGetPayload<{}>;
+  consumptionMethod: string;
+}
+
+export const CartProvider = ({
+  children,
+  restaurant,
+  consumptionMethod,
+}: CartProviderProps) => {
   const [products, setProducts] = useState<CartProduct[]>([]);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-
   const total = products.reduce((acc, product) => {
     return acc + product.price * product.quantity;
   }, 0);
   const totalQuantity = products.reduce((acc, product) => {
     return acc + product.quantity;
   }, 0);
-  const toggleCart = () => {
+  const toggleCart = useCallback(() => {
     setIsOpen((prev) => !prev);
-  };
-  const addProduct = (product: CartProduct) => {
-    const productIsAlreadyOnTheCart = products.some(
-      (prevProduct) => prevProduct.id === product.id,
-    );
-    if (!productIsAlreadyOnTheCart) {
-      return setProducts((prev) => [...prev, product]);
-    }
-    setProducts((prevProducts) => {
-      return prevProducts.map((prevProduct) => {
-        if (prevProduct.id === product.id) {
-          return {
-            ...prevProduct,
-            quantity: prevProduct.quantity + product.quantity,
-          };
-        }
-        return prevProduct;
-      });
-    });
-  };
-  const decreaseProductQuantity = (productId: string) => {
+  }, []);
+
+  const addProduct = useCallback(
+    (product: CartProduct) => {
+      // Verifica se o produto é de um restaurante diferente. Se for, limpa a sacola.
+      const isDifferentRestaurant =
+        products.length > 0 &&
+        products[0].restaurantId !== product.restaurantId;
+
+      const newProducts = isDifferentRestaurant ? [] : [...products];
+
+      const productInCart = newProducts.find((p) => p.id === product.id);
+
+      if (productInCart) {
+        // Se o produto já está na sacola, atualiza a quantidade
+        const updatedProducts = newProducts.map((p) =>
+          p.id === product.id
+            ? { ...p, quantity: p.quantity + product.quantity }
+            : p,
+        );
+        setProducts(updatedProducts);
+      } else {
+        // Se o produto não está na sacola, adiciona
+        setProducts([...newProducts, product]);
+      }
+    },
+    [products],
+  );
+  const decreaseProductQuantity = useCallback((productId: string) => {
     setProducts((prevProducts) => {
       return prevProducts.map((prevProduct) => {
         if (prevProduct.id !== productId) {
@@ -82,8 +103,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return { ...prevProduct, quantity: prevProduct.quantity - 1 };
       });
     });
-  };
-  const increaseProductQuantity = (productId: string) => {
+  }, []);
+  const increaseProductQuantity = useCallback((productId: string) => {
     setProducts((prevProducts) => {
       return prevProducts.map((prevProduct) => {
         if (prevProduct.id !== productId) {
@@ -92,15 +113,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return { ...prevProduct, quantity: prevProduct.quantity + 1 };
       });
     });
-  };
-  const removeProduct = (productId: string) => {
+  }, []);
+  const removeProduct = useCallback((productId: string) => {
     setProducts((prevProducts) =>
       prevProducts.filter((prevProduct) => prevProduct.id !== productId),
     );
-  };
-  const clearCart = () => {
+  }, []);
+  const clearCart = useCallback(() => {
     setProducts([]);
-  };
+  }, []);
   return (
     <CartContext.Provider
       value={{
@@ -114,6 +135,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         total,
         totalQuantity,
+        restaurant,
+        consumptionMethod,
       }}
     >
       {children}

@@ -2,8 +2,9 @@
 
 import { Prisma } from "@prisma/client";
 import { ClockIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -12,6 +13,7 @@ import { formatCurrency } from "@/helpers/format-currency";
 import { CartContext } from "../contexts/cart";
 import CartSheet from "./cart-sheet";
 import Products from "./products";
+import { SuccessModal } from "./success-modal";
 
 interface RestaurantCategoriesProps {
   restaurant: Prisma.RestaurantGetPayload<{
@@ -30,16 +32,40 @@ type MenuCategoriesWithProducts = Prisma.MenuCategoryGetPayload<{
 const RestaurantCategories = ({ restaurant }: RestaurantCategoriesProps) => {
   const [selectedCategory, setSelectedCategory] =
     useState<MenuCategoriesWithProducts>(restaurant.menuCategories[0]);
-  const { products, total, toggleCart, totalQuantity } =
+  const { products, total, toggleCart, totalQuantity, clearCart } =
     useContext(CartContext);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      clearCart();
+      setIsSuccessModalOpen(true);
+
+      // Remove o parâmetro 'success' da URL sem recarregar a página
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete("success");
+      router.replace(`${pathname}?${newSearchParams.toString()}`);
+    }
+  }, [searchParams, clearCart, router, pathname]);
+
   const handleCategoryClick = (category: MenuCategoriesWithProducts) => {
     setSelectedCategory(category);
   };
+
   const getCategoryButtonVariant = (category: MenuCategoriesWithProducts) => {
     return selectedCategory.id === category.id ? "default" : "secondary";
   };
   return (
     <div className="relative z-50 mt-[-1.5rem] rounded-t-3xl bg-white">
+      <SuccessModal
+        open={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        restaurant={restaurant}
+      />
+
       <div className="p-5">
         <div className="flex items-center gap-3">
           <Image
@@ -90,9 +116,9 @@ const RestaurantCategories = ({ restaurant }: RestaurantCategoriesProps) => {
             </p>
           </div>
           <Button onClick={toggleCart}>Ver sacola</Button>
-          <CartSheet />
         </div>
       )}
+      <CartSheet restaurant={restaurant} />
     </div>
   );
 };

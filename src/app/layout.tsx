@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "@/components/footer";
 
-import { CartProvider } from "./[slug]/menu/contexts/cart";
 
 const poppins = Poppins({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -13,8 +13,12 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "RaikySilva Donalds",
-  description: "Raiky Silva McDonalds!",
+  title: "McDonald's",
+  description: "McDonald's!",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico"
+  },
 };
 
 export default function RootLayout({
@@ -24,9 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.className} antialiased`}>
-        <CartProvider>{children}</CartProvider>
-
+      <body className={`${poppins.className} flex min-h-screen flex-col antialiased`}>
+        <div className="flex-grow">
+          {children}
+        </div>
+        <Footer />
         <Toaster />
       </body>
     </html>

@@ -1,14 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ConsumptionMethod } from "@prisma/client";
-import { Loader2Icon } from "lucide-react";
+import { ConsumptionMethod, Prisma } from "@prisma/client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useContext, useEffect, useState, useTransition } from "react";
-import Confetti from "react-confetti";
+import { useContext, useState } from "react";
 import { PatternFormat } from "react-number-format";
-import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +17,6 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
   Form,
@@ -32,8 +28,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-import { createOrder } from "../actions/create-order";
-import { CartContext, removeCpfPunctuation } from "../contexts/cart";
+import { CartContext } from "../contexts/cart";
 import { isValidCpf } from "../helpers/cpf";
 
 const formSchema = z.object({
@@ -56,15 +51,20 @@ type FormSchema = z.infer<typeof formSchema>;
 interface FinishOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  restaurant: Prisma.RestaurantGetPayload<{}>;
 }
 
-const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
+const FinishOrderDialog = ({
+  open,
+  onOpenChange,
+  restaurant,
+}: FinishOrderDialogProps) => {
   const { slug } = useParams<{ slug: string }>();
-  const { products, clearCart } = useContext(CartContext);
+  const { products } = useContext(CartContext);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isPending, startTransition] = useTransition()
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -74,111 +74,125 @@ const FinishOrderDialog = ({ open, onOpenChange }: FinishOrderDialogProps) => {
     shouldUnregister: true,
   });
 
-  useEffect(() => {
-    if (showConfetti) {
-      const timer = setTimeout(() => {
-        const customerCpf = form.getValues("cpf");
-        const cpfQuery = removeCpfPunctuation(customerCpf || "");
-        router.push(`/${slug}/orders?cpf=${cpfQuery}`);
-      }, 3000); // Redireciona após 3 segundos
-      return () => clearTimeout(timer);
-    }
-  }, [showConfetti, router, slug, form]);
   const onSubmit = async (data: FormSchema) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    // Verificação de segurança final. A lógica principal de prevenção deve estar no componente pai.
+    if (!restaurant) {
+      console.error(
+        "Erro crítico: onSubmit foi chamado sem um objeto 'restaurant'.",
+      );
+      setError(
+        "Ocorreu um erro inesperado. Por favor, recarregue a página e tente novamente.",
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const consumptionMethod = searchParams.get(
         "consumptionMethod",
       ) as ConsumptionMethod;
-      startTransition(async () => {
-        await createOrder({
-          consumptionMethod,
-          customerCpf: data.cpf,
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: restaurant.id,
           customerName: data.name,
-          products,
-          slug,
-        });
-        clearCart();
-        setShowConfetti(true);
-        onOpenChange(false);
-        toast.success("Pedido finalizado com sucesso!");
-      })
-     
-  
+          customerCpf: data.cpf,
+          consumptionMethod,
+          products: products.map((p) => ({
+            productId: p.id,
+            quantity: p.quantity,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao criar o pedido.");
+      }
+
+      const { checkoutUrl } = await response.json();
+
+      // Redireciona para a página de checkout do Stripe
+      window.location.href = checkoutUrl;
     } catch (error) {
+      setError("Ocorreu um erro ao finalizar o pedido. Tente novamente.");
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      {showConfetti && (
-        <Confetti
-          width={window.innerWidth}
-          height={window.innerHeight}
-          recycle={false}
-        />
-      )}
-      <DrawerTrigger asChild></DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Finalizar Pedido</DrawerTitle>
-          <DrawerDescription>
-            Insira suas informações abaixo para finalizar o seu pedido.
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="p-5">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Seu nome</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Digite seu nome..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="cpf"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Seu CPF</FormLabel>
-                    <FormControl>
-                      <PatternFormat
-                        placeholder="Digite seu CPF..."
-                        format="###.###.###-##"
-                        customInput={Input}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <DrawerHeader>
+            <DrawerTitle>Finalizar Pedido</DrawerTitle>
+            <DrawerDescription>
+              Insira suas informações abaixo para finalizar o seu pedido.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-5">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seu nome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Digite seu nome..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seu CPF</FormLabel>
+                      <FormControl>
+                        <PatternFormat
+                          placeholder="Digite seu CPF..."
+                          format="###.###.###-##"
+                          customInput={Input}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <DrawerFooter>
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  className="rounded-full"
-                  disabled={isPending}
-                >
-                  {isPending && <Loader2Icon className="animate-spin"/>}
-                  Finalizar
-                </Button>
-                <DrawerClose asChild>
-                  <Button className="w-full rounded-full" variant="outline">
-                    Cancelar
+                <DrawerFooter>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !restaurant}
+                  >
+                    {isSubmitting ? "Finalizando..." : "Ir para o Pagamento"}
                   </Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </form>
-          </Form>
-        </div>
+                  {error && (
+                    <p className="mt-2 text-center text-xs text-red-500">
+                      {error}
+                    </p>
+                  )}
+                  <DrawerClose asChild>
+                    <Button className="w-full" variant="outline">
+                      Cancelar
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </form>
+            </Form>
+          </div>
       </DrawerContent>
     </Drawer>
   );

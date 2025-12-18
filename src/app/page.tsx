@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma";
-import HomeRedirect from "./home-redirect";
+import { redirect } from "next/navigation";
 
 const HomePage = async () => {
   // get the first restaurant and redirect to its slug
@@ -8,8 +8,7 @@ const HomePage = async () => {
   if (!restaurant) {
     return <h1>No restaurants available</h1>;
   }
-
-  return <HomeRedirect slug={restaurant.slug} />;
+  redirect(`/${restaurant.slug}`);
 };
 
 export default HomePage;
